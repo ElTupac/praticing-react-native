@@ -1,47 +1,35 @@
 import React, { useState } from "react";
-import { Button, StyleSheet, Text, View } from "react-native";
+import { Button, Text, TextInput, View } from "react-native";
 
-import { REACT_APP_WS_URL } from "@env";
+import styles from "./src/styles";
+import ConnectButton from "./src/ConnectButton";
 
 const App = () => {
   const [sucessfulConnection, setSucessfulConnection] = useState(false);
   const [socketLastMessage, setSocketLastMessage] = useState();
   const [errorMessage, setErrorMessage] = useState();
+  const [username, setUsername] = useState();
+  const [token, setToken] = useState();
 
-  const createConnection = () => {
-    try {
-      const ws = new WebSocket(REACT_APP_WS_URL);
-      ws.onopen = () => {
-        console.log("Connected to socket: %s", REACT_APP_WS_URL);
-        setErrorMessage(undefined);
-        setSucessfulConnection(true);
-      };
-      ws.onmessage = ({ data }) => {
-        setSocketLastMessage(data);
-      };
-      ws.onclose = () => {
-        setSucessfulConnection(false);
-        setErrorMessage("Closed communication");
-      };
-      ws.onerror = ({ message }) => {
-        setSucessfulConnection(false);
-        setErrorMessage(message);
-      };
-    } catch (error) {
-      console.log(error);
-    }
+  const buttonProps = {
+    title: "Send name",
+    onPress: () => {
+      fetch("http://192.168.0.4:3001/user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username }),
+      })
+        .then((res) => res.json())
+        .then(({ token }) => setToken(token))
+        .catch((err) => console.log("Oops... %s", JSON.stringify(err)));
+    },
   };
+  if (!username || !username.length) buttonProps.disabled = true;
 
   return (
-    <View
-      style={
-        StyleSheet.create({
-          container: {
-            padding: 30,
-          },
-        }).container
-      }
-    >
+    <View style={styles.container}>
       <Text>Testing WebSocket connection</Text>
       {sucessfulConnection ? (
         <View>
@@ -52,7 +40,34 @@ const App = () => {
         <Text>Not available connection</Text>
       )}
       {errorMessage && <Text>{errorMessage}</Text>}
-      <Button onPress={createConnection} title="Test Connection" />
+      <View style={styles.controlsContainer}>
+        <TextInput
+          onChangeText={setUsername}
+          value={username}
+          placeholder="Your name in-game"
+        />
+        <View style={styles.buttonContainer}>
+          <Button {...buttonProps} />
+        </View>
+        {token && <Text>Token: {token}</Text>}
+        <ConnectButton
+          token={token}
+          onSuccess={() => {
+            setErrorMessage(undefined);
+            setSucessfulConnection(true);
+          }}
+          onMessage={(data) => setSocketLastMessage(data)}
+          onClose={() => {
+            setSucessfulConnection(false);
+            setErrorMessage("Closed communication");
+          }}
+          onFail={(message) => {
+            setSucessfulConnection(false);
+            setErrorMessage(message);
+          }}
+          title="Test Connection"
+        />
+      </View>
     </View>
   );
 };

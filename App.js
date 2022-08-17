@@ -11,10 +11,25 @@ const App = () => {
   const [username, setUsername] = useState();
   const [token, setToken] = useState();
 
+  const [wsRef, setWsRef] = useState();
+  const [wsAuth, setWsAuth] = useState(false);
+  const [friendName, setFriendName] = useState();
+
+  const inviteButtonProps = {
+    title: "Invite friend",
+    onPress: () => {
+      if (wsRef) {
+        wsRef.send(`invite--${friendName}`);
+      }
+    },
+  };
+  if (!wsAuth || !friendName || !friendName.length)
+    inviteButtonProps.disabled = true;
+
   const buttonProps = {
     title: "Send name",
     onPress: () => {
-      fetch("http://192.168.0.4:3001/user", {
+      fetch("http://10.236.28.163:3001/user", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -52,7 +67,8 @@ const App = () => {
         {token && <Text>Token: {token}</Text>}
         <ConnectButton
           token={token}
-          onSuccess={() => {
+          onSuccess={(ws) => {
+            setWsRef(ws);
             setErrorMessage(undefined);
             setSucessfulConnection(true);
           }}
@@ -65,9 +81,20 @@ const App = () => {
             setSucessfulConnection(false);
             setErrorMessage(message);
           }}
+          onAuth={() => setWsAuth(true)}
           title="Test Connection"
         />
       </View>
+      {wsAuth && (
+        <View style={styles.controlsContainer}>
+          <TextInput
+            onChangeText={setFriendName}
+            value={friendName}
+            placeholder="Your friend name"
+          />
+          <Button {...inviteButtonProps} />
+        </View>
+      )}
     </View>
   );
 };

@@ -7,22 +7,17 @@ const ConnectButton = ({
   onFail,
   onClose,
   onMessage,
+  onAuth,
   token,
 }) => {
   const createConnection = () => {
     try {
-      console.log("El token es: %s", token);
+      console.log("URL: %s", REACT_APP_WS_URL);
       const ws = new WebSocket(REACT_APP_WS_URL);
       let messageInterval;
-      console.log("Connected to socket: %s", REACT_APP_WS_URL);
 
-      const startMessages = () => {
-        messageInterval = setInterval(() => {
-          ws.send("Hola, master");
-        }, 1500);
-      };
       ws.onopen = () => {
-        if (typeof onSuccess === "function") onSuccess();
+        if (typeof onSuccess === "function") onSuccess(ws);
       };
       ws.onmessage = ({ data }) => {
         switch (data) {
@@ -31,7 +26,7 @@ const ConnectButton = ({
             break;
 
           case "authenticate_ok":
-            startMessages();
+            if (typeof onAuth === "function") onAuth();
             break;
 
           default:

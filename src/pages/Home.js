@@ -1,7 +1,7 @@
 import { Button, Text, TextInput, View } from "react-native";
 import styles from "./src/styles";
 
-const Home = () => (
+const Home = ({ navigation }) => (
   <View style={styles.container}>
     <Text>Testing navigation</Text>
     <TextInput placeholder="Your username" />

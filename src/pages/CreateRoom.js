@@ -1,7 +1,7 @@
 import { Button, Text, TextInput, View } from "react-native";
 import styles from "./src/styles";
 
-const CreateRoom = () => (
+const CreateRoom = ({ navigation }) => (
   <View style={styles.container}>
     <Text>Invite a friend</Text>
     <TextInput placeholder="Your friend full username" />

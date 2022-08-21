@@ -1,18 +1,20 @@
-import { useContext, createContext, useState } from "react";
+import { useContext, createContext, useState, useEffect } from "react";
 
 const WebSocketContext = createContext(null);
 
 export const WebSocketProvider = ({ children }) => {
   const [connectionData, setConnectionData] = useState({});
-  const [lastMessage, setLastMessage] = useState();
 
   const updateConnectionData = (property, value) => {
-    const newData = { ...connectionData };
-    newData[property] = value;
-    setConnectionData(newData);
+    setConnectionData((oldData) => {
+      const newData = { ...oldData };
+      newData[property] = value;
+      return newData;
+    });
   };
 
-  const createUser = (username) => {
+  const createUser = (username, { onSuccess, onError }) => {
+    updateConnectionData("username", username);
     fetch(`http://${process.env.REACT_APP_BACKEND_HOST}/user`, {
       method: "POST",
       headers: {
@@ -22,21 +24,36 @@ export const WebSocketProvider = ({ children }) => {
     })
       .then((res) => res.json())
       .then(({ token }) => {
-        updateConnectionData("username", username);
         updateConnectionData("token", token);
+        if (typeof onSuccess === "function") onSuccess();
       })
-      .catch((err) => console.log("Oops... %s", JSON.stringify(err)));
+      .catch((err) => {
+        console.log("Oops... %s", JSON.stringify(err));
+        if (typeof onError === "function") onError();
+      });
+  };
+
+  const newMessage = (message) => {
+    const [action, value, data] = message.split("--");
+    switch (action) {
+      case "info":
+        updateConnectionData(value, data);
+        break;
+      default:
+        console.log(action, value, data);
+    }
   };
 
   const startConnection = () => {
     if (connectionData.token) {
+      console.log("Starting connection");
       try {
         const webSocket = new WebSocket(
           `ws://${process.env.REACT_APP_BACKEND_HOST}`
         );
 
         webSocket.onopen = () => {
-          updateConnectionData("connnected", true);
+          updateConnectionData("connected", true);
         };
         webSocket.onmessage = ({ data }) => {
           switch (data) {
@@ -47,7 +64,7 @@ export const WebSocketProvider = ({ children }) => {
               updateConnectionData("authenticated", true);
               break;
             default:
-              setLastMessage(data);
+              newMessage(data);
           }
         };
         webSocket.onclose = () => {
@@ -64,9 +81,17 @@ export const WebSocketProvider = ({ children }) => {
     } else throw "NO_CONNECTION_TOKEN";
   };
 
+  const { connected, authenticated, fullName } = connectionData;
+
   return (
     <WebSocketContext.Provider
-      value={{ createUser, lastMessage, startConnection }}
+      value={{
+        createUser,
+        startConnection,
+        connected,
+        authenticated,
+        fullName,
+      }}
     >
       {children}
     </WebSocketContext.Provider>

@@ -13,7 +13,7 @@ const App = () => (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Home">
         <Stack.Screen name="Home" component={Home} />
-        <Stack.Screen name="CreateRoom" component={CreateRoom} />
+        <Stack.Screen name="Invite a friend" component={CreateRoom} />
       </Stack.Navigator>
     </NavigationContainer>
   </WebSocketProvider>
